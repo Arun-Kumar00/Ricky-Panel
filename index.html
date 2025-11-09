@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricky Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .stat-card { 
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        }
+        .stat-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        #order-table tbody tr:hover { background-color: #374151; }
+        .tab-btn { 
+            transition: all 0.2s ease; 
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+        .tab-btn.active { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white; 
+            box-shadow: 0 -2px 10px rgba(59, 130, 246, 0.3);
+        }
+        .tab-btn:not(.active) { 
+            background-color: transparent; 
+            color: #9ca3af; 
+        }
+        .tab-btn:not(.active):hover {
+            background-color: #1f2937;
+            color: #d1d5db;
+        }
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .delete-btn {
+            transition: all 0.2s ease;
+        }
+        .delete-btn:hover {
+            transform: scale(1.1);
+        }
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-200 min-h-screen">
+
+    <audio id="alarm-sound" src="alarm.wav" preload="auto"></audio>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold gradient-text mb-2">Ricky Admin Panel</h1>
+                <p class="text-gray-400 flex items-center gap-2">
+                    <span class="pulse-dot inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                    Live Operations Dashboard
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button id="refresh-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
+                    <span>🔄</span> Refresh
+                </button>
+                <button id="mute-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
+                    <span>🔇</span> <span id="mute-text">Muted</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- TABS -->
+        <div class="mb-6 border-b border-gray-700">
+            <nav class="flex space-x-2" aria-label="Tabs">
+                <button id="tab-dashboard" class="tab-btn active px-6 py-3 font-semibold text-sm">
+                    📊 Dashboard
+                </button>
+                <button id="tab-analytics" class="tab-btn px-6 py-3 font-semibold text-sm">
+                    📈 Analytics
+                </button>
+                <button id="tab-users" class="tab-btn px-6 py-3 font-semibold text-sm">
+                    👥 Users
+                </button>
+                <button id="tab-billing" class="tab-btn px-6 py-3 font-semibold text-sm">
+                    💰 Billing
+                </button>
+            </nav>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content">
+            <!-- Quick Stats -->
+            <section id="stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <div class="flex justify-between items-start mb-3">
+                        <h2 class="text-sm font-medium text-gray-400">Total Riders</h2>
+                        <span class="text-2xl">🏍️</span>
+                    </div>
+                    <p id="total-riders" class="text-4xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-gray-500">
+                        <span id="riders-available" class="text-green-400">0</span> available
+                    </p>
+                </div>
+                
+                <div class="stat-card p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <div class="flex justify-between items-start mb-3">
+                        <h2 class="text-sm font-medium text-gray-400">Total Customers</h2>
+                        <span class="text-2xl">🏪</span>
+                    </div>
+                    <p id="total-restaurants" class="text-4xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-gray-500">Registered users</p>
+                </div>
+                
+                <div class="stat-card p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <div class="flex justify-between items-start mb-3">
+                        <h2 class="text-sm font-medium text-gray-400">Today's Orders</h2>
+                        <span class="text-2xl">📦</span>
+                    </div>
+                    <p id="today-orders" class="text-4xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-green-400" id="today-revenue">₹0 revenue</p>
+                </div>
+                
+                <div class="stat-card p-6 rounded-xl shadow-2xl border border-gray-700 cursor-pointer" id="total-orders-card">
+                    <div class="flex justify-between items-start mb-3">
+                        <h2 class="text-sm font-medium text-gray-400">Total Orders</h2>
+                        <span class="text-2xl">📊</span>
+                    </div>
+                    <p id="total-orders" class="text-4xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-gray-500">Click to view breakdown</p>
+                </div>
+            </section>
+
+            <!-- Live Order Feed -->
+            <section>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="pulse-dot inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+                        Today's Orders
+                    </h2>
+                    <span class="text-sm text-gray-400" id="order-count">0 orders</span>
+                </div>
+                <div class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+                    <div class="overflow-x-auto">
+                        <table id="order-table" class="min-w-full">
+                            <thead class="bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Time</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Rider</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Price</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-table-body" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="no-orders" class="hidden p-12 text-center text-gray-500">
+                        <p class="text-4xl mb-4">📭</p>
+                        <p class="text-lg">No orders today yet</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Analytics Content -->
+        <div id="analytics-content" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Daily Stats -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4">📅 Today's Statistics</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="today-completed-card">
+                            <span class="text-gray-300">Completed Orders</span>
+                            <span id="today-completed" class="text-2xl font-bold text-green-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="today-accepted-card">
+                            <span class="text-gray-300">Accepted Orders</span>
+                            <span id="today-accepted" class="text-2xl font-bold text-blue-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="today-pending-card">
+                            <span class="text-gray-300">Pending Orders</span>
+                            <span id="today-pending" class="text-2xl font-bold text-yellow-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="today-cancelled-card">
+                            <span class="text-gray-300">Cancelled Orders</span>
+                            <span id="today-cancelled" class="text-2xl font-bold text-red-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
+                            <span class="text-gray-300">Total Revenue</span>
+                            <span id="today-total-revenue" class="text-2xl font-bold text-blue-400">₹0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
+                            <span class="text-gray-300">Avg Order Value</span>
+                            <span id="today-avg" class="text-2xl font-bold text-purple-400">₹0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Stats -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4">📊 Overall Statistics</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="overall-completed-card">
+                            <span class="text-gray-300">Total Completed</span>
+                            <span id="overall-completed" class="text-2xl font-bold text-green-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="overall-accepted-card">
+                            <span class="text-gray-300">Total Accepted</span>
+                            <span id="overall-accepted" class="text-2xl font-bold text-blue-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="overall-pending-card">
+                            <span class="text-gray-300">Total Pending</span>
+                            <span id="overall-pending" class="text-2xl font-bold text-yellow-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600" id="overall-cancelled-card">
+                            <span class="text-gray-300">Total Cancelled</span>
+                            <span id="overall-cancelled" class="text-2xl font-bold text-red-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
+                            <span class="text-gray-300">Success Rate</span>
+                            <span id="overall-rate" class="text-2xl font-bold text-blue-400">0%</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
+                            <span class="text-gray-300">Total Revenue</span>
+                            <span id="overall-revenue" class="text-2xl font-bold text-green-400">₹0</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
+                            <span class="text-gray-300">Avg Order Value</span>
+                            <span id="overall-avg" class="text-2xl font-bold text-purple-400">₹0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Type Breakdown -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                <h3 class="text-xl font-bold text-white mb-4">📦 Order Type Breakdown</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-gradient-to-br from-purple-900/30 to-purple-800/30 rounded-lg border border-purple-700/50">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Doorstep Orders</span>
+                            <span id="doorstep-count" class="text-3xl font-bold text-purple-400">0</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Revenue: <span id="doorstep-revenue" class="text-purple-400 font-semibold">₹0</span>
+                        </p>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-lg border border-blue-700/50">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Quick Ride Orders</span>
+                            <span id="quick-count" class="text-3xl font-bold text-blue-400">0</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">
+                            Revenue: <span id="quick-revenue" class="text-blue-400 font-semibold">₹0</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Content -->
+        <div id="users-content" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Riders List -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center justify-between">
+                        <span>🏍️ Riders (<span id="riders-count">0</span>)</span>
+                        <button id="refresh-riders" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded">Refresh</button>
+                    </h3>
+                    <div class="mb-4">
+                        <input 
+                            type="text" 
+                            id="search-riders" 
+                            placeholder="Search by name or phone..." 
+                            class="w-full bg-gray-700 border-gray-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                        />
+                    </div>
+                    <div id="riders-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Customers List -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center justify-between">
+                        <span>🏪 Customers (<span id="customers-count">0</span>)</span>
+                        <button id="refresh-customers" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded">Refresh</button>
+                    </h3>
+                    <div class="mb-4">
+                        <input 
+                            type="text" 
+                            id="search-customers" 
+                            placeholder="Search by name or phone..." 
+                            class="w-full bg-gray-700 border-gray-600 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                        />
+                    </div>
+                    <div id="customers-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Content -->
+        <div id="billing-content" class="hidden">
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+                <h2 class="text-2xl font-bold text-white mb-6">💰 Process Payments & Bills</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="col-span-1">
+                        <label for="user-type" class="block text-sm font-medium text-gray-400 mb-2">User Type</label>
+                        <select id="user-type" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                            <option value="riders">Rider Payment</option>
+                            <option value="restaurants">Customer Bill</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="user-select" class="block text-sm font-medium text-gray-400 mb-2">Select User</label>
+                        <select id="user-select" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                            <option>-- Select User Type First --</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="start-date" class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
+                        <input type="date" id="start-date" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                    </div>
+                    <div class="col-span-1">
+                        <label for="end-date" class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
+                        <input type="date" id="end-date" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                    </div>
+                </div>
+                <button id="calculate-btn" class="mt-6 w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                    Calculate
+                </button>
+
+                <div id="billing-results" class="mt-8 hidden">
+                    <div class="bg-gray-700 p-6 rounded-lg">
+                        <h3 id="results-title" class="text-2xl font-bold mb-2">Calculation Results</h3>
+                        <p id="results-description" class="text-gray-400 mb-4">Total outstanding for selected period:</p>
+                        <p id="total-due" class="text-5xl font-bold text-green-400 mb-4">₹0.00</p>
+                        <div id="unpaid-orders-list" class="max-h-60 overflow-y-auto border border-gray-600 rounded-lg p-4 mb-4 bg-gray-800"></div>
+                        <button id="pay-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                            Mark as Paid / Settled
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rider Details Modal -->
+    <div id="rider-details-modal" class="fixed inset-0 bg-black/80 modal-backdrop flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-2xl border border-gray-700 relative max-h-[90vh] overflow-y-auto">
+            <button id="close-rider-details" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl">&times;</button>
+            <h2 class="text-3xl font-bold mb-6 gradient-text">Rider Statistics</h2>
+            <div id="rider-details-content"></div>
+        </div>
+    </div>
+
+    <!-- Order Breakdown Modal -->
+    <div id="breakdown-modal" class="fixed inset-0 bg-black/80 modal-backdrop flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-4xl border border-gray-700 relative max-h-[90vh] overflow-y-auto">
+            <button id="close-breakdown-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl">&times;</button>
+            <h2 class="text-3xl font-bold mb-6 gradient-text" id="breakdown-title">Order Breakdown</h2>
+            <div id="breakdown-content"></div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="details-modal" class="fixed inset-0 bg-black/80 modal-backdrop flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-3xl border border-gray-700 relative max-h-[90vh] overflow-y-auto">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl">&times;</button>
+            <h2 class="text-3xl font-bold mb-6 gradient-text">Order Details</h2>
+            <div id="modal-content" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black/80 modal-backdrop flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-red-700">
+            <h2 class="text-2xl font-bold mb-4 text-red-400">⚠️ Confirm Deletion</h2>
+            <p class="text-gray-300 mb-6" id="delete-confirm-text">Are you sure you want to delete this user?</p>
+            <div class="flex gap-4">
+                <button id="cancel-delete" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg">
+                    Cancel
+                </button>
+                <button id="confirm-delete" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF-LT-rGdnTOls0lIGE6C_ssiwqOUOq5A",
+            authDomain: "arun-bc25d.firebaseapp.com",
+            databaseURL: "https://arun-bc25d-default-rtdb.firebaseio.com",
+            projectId: "arun-bc25d",
+            storageBucket: "arun-bc25d.appspot.com",
+            messagingSenderId: "250915027240",
+            appId: "1:250915027240:web:8a0e82a290b91a497a381d",
+            measurementId: "G-JELGTKLDHX"
+        };
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue, get, remove, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        signInAnonymously(auth).catch(error => console.error("Auth failed:", error));
+
+        // Tab Navigation
+        const tabs = {
+            dashboard: document.getElementById('tab-dashboard'),
+            analytics: document.getElementById('tab-analytics'),
+            users: document.getElementById('tab-users'),
+            billing: document.getElementById('tab-billing')
+        };
+
+        const contents = {
+            dashboard: document.getElementById('dashboard-content'),
+            analytics: document.getElementById('analytics-content'),
+            users: document.getElementById('users-content'),
+            billing: document.getElementById('billing-content')
+        };
+
+        function switchTab(tabName) {
+            Object.keys(tabs).forEach(key => {
+                tabs[key].classList.remove('active');
+                contents[key].classList.add('hidden');
+            });
+            tabs[tabName].classList.add('active');
+            contents[tabName].classList.remove('hidden');
+        }
+
+        tabs.dashboard.addEventListener('click', () => switchTab('dashboard'));
+        tabs.analytics.addEventListener('click', () => switchTab('analytics'));
+        tabs.users.addEventListener('click', () => switchTab('users'));
+        tabs.billing.addEventListener('click', () => switchTab('billing'));
+
+        // Alarm & Mute
+        const alarmSound = document.getElementById('alarm-sound');
+        const muteBtn = document.getElementById('mute-btn');
+        const muteText = document.getElementById('mute-text');
+        let isMuted = true;
+
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteBtn.innerHTML = isMuted 
+                ? '<span>🔇</span> <span>Muted</span>' 
+                : '<span>🔊</span> <span>Unmuted</span>';
+        });
+
+        // Helper Functions
+        const formatTimestamp = (timestamp) => {
+            return new Date(timestamp).toLocaleString('en-IN', {
+                hour: '2-digit', minute: '2-digit', hour12: true
+            });
+        };
+
+        const formatDate = (timestamp) => {
+            return new Date(timestamp).toLocaleDateString('en-IN');
+        };
+
+        const getTodayStart = () => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today.getTime();
+        };
+
+        const createStatusBadge = (status) => {
+            const badges = {
+                pending: 'bg-yellow-500 text-yellow-900',
+                accepted: 'bg-blue-500 text-blue-900',
+                completed: 'bg-green-500 text-green-900',
+                cancelled: 'bg-red-500 text-red-900'
+            };
+            const colorClass = badges[status] || 'bg-gray-500 text-gray-900';
+            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClass}">${status}</span>`;
+        };
+
+        // Dashboard Statistics
+        let allOrders = {};
+        let allRiders = {};
+        let allRestaurants = {};
+
+        function updateDashboardStats() {
+            const todayStart = getTodayStart();
+            let todayOrders = 0;
+            let todayRevenue = 0;
+            let ridersAvailable = 0;
+
+            Object.values(allOrders).forEach(order => {
+                if (order.createdAt >= todayStart) {
+                    todayOrders++;
+                    // Only count revenue from completed orders
+                    if (order.status === 'completed') {
+                        todayRevenue += Number(order.price) || 0;
+                    }
+                }
+            });
+
+            Object.values(allRiders).forEach(rider => {
+                if (rider.isAvailable) ridersAvailable++;
+            });
+
+            document.getElementById('total-riders').textContent = Object.keys(allRiders).length;
+            document.getElementById('riders-available').textContent = ridersAvailable;
+            document.getElementById('total-restaurants').textContent = Object.keys(allRestaurants).length;
+            document.getElementById('today-orders').textContent = todayOrders;
+            document.getElementById('today-revenue').textContent = `₹${todayRevenue.toFixed(0)} revenue`;
+            document.getElementById('total-orders').textContent = Object.keys(allOrders).length;
+        }
+
+        function updateAnalytics() {
+            const todayStart = getTodayStart();
+            let todayCompleted = 0, todayAccepted = 0, todayPending = 0, todayCancelled = 0, todayRevenue = 0;
+            let overallCompleted = 0, overallAccepted = 0, overallPending = 0, overallCancelled = 0, overallRevenue = 0;
+            let doorstepCount = 0, doorstepRevenue = 0;
+            let quickCount = 0, quickRevenue = 0;
+
+            Object.values(allOrders).forEach(order => {
+                const price = Number(order.price) || 0;
+                const isToday = order.createdAt >= todayStart;
+
+                if (isToday) {
+                    // Only count revenue from completed orders
+                    if (order.status === 'completed') {
+                        todayRevenue += price;
+                        todayCompleted++;
+                    }
+                    if (order.status === 'accepted') todayAccepted++;
+                    if (order.status === 'pending') todayPending++;
+                    if (order.status === 'cancelled') todayCancelled++;
+                }
+
+                // Overall stats - only completed revenue
+                if (order.status === 'completed') {
+                    overallCompleted++;
+                    overallRevenue += price;
+                }
+                if (order.status === 'accepted') overallAccepted++;
+                if (order.status === 'pending') overallPending++;
+                if (order.status === 'cancelled') overallCancelled++;
+
+                // Order type breakdown - only completed revenue
+                if (order.status === 'completed') {
+                    if (order.orderType === 'doorstep') {
+                        doorstepCount++;
+                        doorstepRevenue += price;
+                    } else {
+                        quickCount++;
+                        quickRevenue += price;
+                    }
+                }
+            });
+
+            const todayTotal = Object.values(allOrders).filter(o => o.createdAt >= todayStart).length;
+            const todayAvg = todayCompleted > 0 ? todayRevenue / todayCompleted : 0;
+            const overallAvg = overallCompleted > 0 ? overallRevenue / overallCompleted : 0;
+            const successRate = Object.keys(allOrders).length > 0 
+                ? (overallCompleted / Object.keys(allOrders).length * 100).toFixed(1)
+                : 0;
+
+            document.getElementById('today-completed').textContent = todayCompleted;
+            document.getElementById('today-accepted').textContent = todayAccepted;
+            document.getElementById('today-pending').textContent = todayPending;
+            document.getElementById('today-cancelled').textContent = todayCancelled;
+            document.getElementById('today-total-revenue').textContent = `₹${todayRevenue.toFixed(0)}`;
+            document.getElementById('today-avg').textContent = `₹${todayAvg.toFixed(0)}`;
+            document.getElementById('overall-completed').textContent = overallCompleted;
+            document.getElementById('overall-accepted').textContent = overallAccepted;
+            document.getElementById('overall-pending').textContent = overallPending;
+            document.getElementById('overall-cancelled').textContent = overallCancelled;
+            document.getElementById('overall-rate').textContent = `${successRate}%`;
+            document.getElementById('overall-revenue').textContent = `₹${overallRevenue.toFixed(0)}`;
+            document.getElementById('overall-avg').textContent = `₹${overallAvg.toFixed(0)}`;
+            document.getElementById('doorstep-count').textContent = doorstepCount;
+            document.getElementById('doorstep-revenue').textContent = `₹${doorstepRevenue.toFixed(0)}`;
+            document.getElementById('quick-count').textContent = quickCount;
+            document.getElementById('quick-revenue').textContent = `₹${quickRevenue.toFixed(0)}`;
+        }
+
+        // Live Order Feed (Today Only)
+        const orderTableBody = document.getElementById('order-table-body');
+        const noOrdersEl = document.getElementById('no-orders');
+        const orderCountEl = document.getElementById('order-count');
+
+        async function displayTodayOrders() {
+            orderTableBody.innerHTML = '';
+            const todayStart = getTodayStart();
+            const todayOrders = Object.entries(allOrders)
+                .filter(([id, order]) => order.createdAt >= todayStart)
+                .sort(([, a], [, b]) => b.createdAt - a.createdAt);
+
+            if (todayOrders.length === 0) {
+                noOrdersEl.classList.remove('hidden');
+                orderCountEl.textContent = '0 orders';
+                return;
+            }
+
+            noOrdersEl.classList.add('hidden');
+            orderCountEl.textContent = `${todayOrders.length} orders`;
+
+            for (const [orderId, order] of todayOrders) {
+                const row = document.createElement('tr');
+                row.id = `order-${orderId}`;
+                
+                let riderName = 'N/A';
+                if (order.riderId && allRiders[order.riderId]) {
+                    riderName = allRiders[order.riderId].name || 'Unknown';
+                }
+
+                const restaurantName = order.restaurantName || 'N/A';
+                const orderType = order.orderType === 'doorstep' ? '🚪 Doorstep' : '⚡ Quick';
+                const price = (Number(order.price) || 0).toFixed(2);
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${formatTimestamp(order.createdAt)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${restaurantName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300 rider-name">${riderName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${orderType}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm status-cell">${createStatusBadge(order.status)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">₹${price}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button class="details-btn text-blue-400 hover:text-blue-300 font-semibold" data-id="${orderId}">View</button>
+                    </td>
+                `;
+                orderTableBody.appendChild(row);
+            }
+        }
+
+        // Order Details Modal
+        const modal = document.getElementById('details-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const modalContent = document.getElementById('modal-content');
+
+        closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+
+        async function showOrderDetails(orderId) {
+            const order = allOrders[orderId];
+            if (!order) return;
+
+            const riderName = order.riderId && allRiders[order.riderId] 
+                ? allRiders[order.riderId].name 
+                : 'N/A';
+
+            modalContent.innerHTML = `
+                <div class="space-y-3">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Order ID</p>
+                        <p class="text-lg font-semibold">${orderId}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Status</p>
+                        <div class="mt-1">${createStatusBadge(order.status)}</div>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Order Type</p>
+                        <p class="text-lg font-semibold">${order.orderType === 'doorstep' ? '🚪 Doorstep' : '⚡ Quick Ride'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Price</p>
+                        <p class="text-lg font-semibold text-green-400">₹${(Number(order.price) || 0).toFixed(2)}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Created At</p>
+                        <p class="text-lg font-semibold">${new Date(order.createdAt).toLocaleString('en-IN')}</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Customer</p>
+                        <p class="text-lg font-semibold">${order.restaurantName || 'N/A'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Rider</p>
+                        <p class="text-lg font-semibold">${riderName}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Pickup Address</p>
+                        <p class="text-sm">${order.pickupAddress || 'N/A'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Dropoff Address</p>
+                        <p class="text-sm">${order.dropoffAddress || order.dropAddress || 'N/A'}</p>
+                    </div>
+                    ${order.persons ? `
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Persons</p>
+                        <p class="text-lg font-semibold">${order.persons}</p>
+                    </div>` : ''}
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        orderTableBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('details-btn')) {
+                showOrderDetails(e.target.getAttribute('data-id'));
+            }
+        });
+
+        // Order Breakdown Modal
+        const breakdownModal = document.getElementById('breakdown-modal');
+        const closeBreakdownBtn = document.getElementById('close-breakdown-modal');
+        const breakdownTitle = document.getElementById('breakdown-title');
+        const breakdownContent = document.getElementById('breakdown-content');
+
+        closeBreakdownBtn.addEventListener('click', () => breakdownModal.classList.add('hidden'));
+        breakdownModal.addEventListener('click', (e) => {
+            if (e.target === breakdownModal) breakdownModal.classList.add('hidden');
+        });
+
+        function showOrderBreakdown(filter, title) {
+            const todayStart = getTodayStart();
+            let filteredOrders = [];
+
+            if (filter === 'all') {
+                filteredOrders = Object.entries(allOrders);
+            } else if (filter.startsWith('today-')) {
+                const status = filter.replace('today-', '');
+                filteredOrders = Object.entries(allOrders).filter(([id, order]) => 
+                    order.createdAt >= todayStart && order.status === status
+                );
+            } else if (filter.startsWith('overall-')) {
+                const status = filter.replace('overall-', '');
+                filteredOrders = Object.entries(allOrders).filter(([id, order]) => 
+                    order.status === status
+                );
+            }
+
+            breakdownTitle.textContent = title;
+            breakdownContent.innerHTML = '';
+
+            if (filteredOrders.length === 0) {
+                breakdownContent.innerHTML = '<p class="text-center text-gray-500 py-8">No orders found</p>';
+            } else {
+                const table = document.createElement('table');
+                table.className = 'min-w-full';
+                table.innerHTML = `
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Customer</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Rider</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700" id="breakdown-tbody"></tbody>
+                `;
+                breakdownContent.appendChild(table);
+
+                const tbody = document.getElementById('breakdown-tbody');
+                filteredOrders.forEach(([orderId, order]) => {
+                    const riderName = order.riderId && allRiders[order.riderId] 
+                        ? allRiders[order.riderId].name 
+                        : 'N/A';
+                    const orderType = order.orderType === 'doorstep' ? '🚪 Doorstep' : '⚡ Quick';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-700';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 text-sm text-gray-300">${formatDate(order.createdAt)}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">${order.restaurantName || 'N/A'}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">${riderName}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">${orderType}</td>
+                        <td class="px-4 py-3 text-sm">${createStatusBadge(order.status)}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">₹${(Number(order.price) || 0).toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            breakdownModal.classList.remove('hidden');
+        }
+
+        // Add click handlers for order breakdown
+        document.getElementById('total-orders-card').addEventListener('click', () => {
+            showOrderBreakdown('all', 'All Orders Breakdown');
+        });
+
+        document.getElementById('today-completed-card').addEventListener('click', () => {
+            showOrderBreakdown('today-completed', "Today's Completed Orders");
+        });
+
+        document.getElementById('today-accepted-card').addEventListener('click', () => {
+            showOrderBreakdown('today-accepted', "Today's Accepted Orders");
+        });
+
+        document.getElementById('today-pending-card').addEventListener('click', () => {
+            showOrderBreakdown('today-pending', "Today's Pending Orders");
+        });
+
+        document.getElementById('today-cancelled-card').addEventListener('click', () => {
+            showOrderBreakdown('today-cancelled', "Today's Cancelled Orders");
+        });
+
+        document.getElementById('overall-completed-card').addEventListener('click', () => {
+            showOrderBreakdown('overall-completed', 'All Completed Orders');
+        });
+
+        document.getElementById('overall-accepted-card').addEventListener('click', () => {
+            showOrderBreakdown('overall-accepted', 'All Accepted Orders');
+        });
+
+        document.getElementById('overall-pending-card').addEventListener('click', () => {
+            showOrderBreakdown('overall-pending', 'All Pending Orders');
+        });
+
+        document.getElementById('overall-cancelled-card').addEventListener('click', () => {
+            showOrderBreakdown('overall-cancelled', 'All Cancelled Orders');
+        });
+
+        // Users Management
+        const ridersList = document.getElementById('riders-list');
+        const customersList = document.getElementById('customers-list');
+        const ridersCount = document.getElementById('riders-count');
+        const customersCount = document.getElementById('customers-count');
+        const searchRiders = document.getElementById('search-riders');
+        const searchCustomers = document.getElementById('search-customers');
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteConfirmText = document.getElementById('delete-confirm-text');
+        const cancelDeleteBtn = document.getElementById('cancel-delete');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+        const riderDetailsModal = document.getElementById('rider-details-modal');
+        const closeRiderDetailsBtn = document.getElementById('close-rider-details');
+        const riderDetailsContent = document.getElementById('rider-details-content');
+
+        let deleteTarget = { type: '', id: '', name: '' };
+        let ridersSearchTerm = '';
+        let customersSearchTerm = '';
+
+        searchRiders.addEventListener('input', (e) => {
+            ridersSearchTerm = e.target.value.toLowerCase();
+            displayRiders();
+        });
+
+        searchCustomers.addEventListener('input', (e) => {
+            customersSearchTerm = e.target.value.toLowerCase();
+            displayCustomers();
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+        
+        closeRiderDetailsBtn.addEventListener('click', () => riderDetailsModal.classList.add('hidden'));
+        riderDetailsModal.addEventListener('click', (e) => {
+            if (e.target === riderDetailsModal) riderDetailsModal.classList.add('hidden');
+        });
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) deleteModal.classList.add('hidden');
+        });
+
+        function showDeleteConfirmation(type, id, name) {
+            deleteTarget = { type, id, name };
+            deleteConfirmText.textContent = `Are you sure you want to delete ${type === 'riders' ? 'rider' : 'customer'} "${name}"? This action cannot be undone.`;
+            deleteModal.classList.remove('hidden');
+        }
+
+        confirmDeleteBtn.addEventListener('click', async () => {
+            try {
+                await remove(ref(db, `${deleteTarget.type}/${deleteTarget.id}`));
+                deleteModal.classList.add('hidden');
+                alert(`${deleteTarget.name} has been deleted successfully.`);
+            } catch (error) {
+                alert(`Failed to delete: ${error.message}`);
+            }
+        });
+
+        function showRiderDetails(riderId) {
+            const rider = allRiders[riderId];
+            if (!rider) return;
+
+            // Calculate rider statistics
+            let acceptedCount = 0;
+            let completedCount = 0;
+            let cancelledCount = 0;
+            let totalEarnings = 0;
+
+            Object.entries(allOrders).forEach(([orderId, order]) => {
+                if (order.riderId === riderId) {
+                    if (order.status === 'accepted') acceptedCount++;
+                    if (order.status === 'completed') {
+                        completedCount++;
+                        totalEarnings += (Number(order.price) || 0);
+                    }
+                    if (order.status === 'cancelled') cancelledCount++;
+                }
+            });
+
+            const totalRides = acceptedCount + completedCount + cancelledCount;
+            const completionRate = totalRides > 0 ? ((completedCount / totalRides) * 100).toFixed(1) : 0;
+
+            riderDetailsContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Rider Name</p>
+                        <p class="text-2xl font-bold text-white">${rider.name || 'Unknown'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Phone Number</p>
+                        <p class="text-xl font-semibold text-white">${rider.phone || 'N/A'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Vehicle</p>
+                        <p class="text-xl font-semibold text-white">${rider.vehicle || 'N/A'}</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Status</p>
+                        <p class="text-xl font-semibold ${rider.isAvailable ? 'text-green-400' : 'text-gray-400'}">
+                            ${rider.isAvailable ? '🟢 Available' : '⚫ Offline'}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-xl font-bold text-white mb-4">📊 Ride Statistics</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-br from-blue-900/30 to-blue-800/30 p-4 rounded-lg border border-blue-700/50">
+                            <p class="text-sm text-gray-400">Accepted Rides</p>
+                            <p class="text-3xl font-bold text-blue-400">${acceptedCount}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-900/30 to-green-800/30 p-4 rounded-lg border border-green-700/50">
+                            <p class="text-sm text-gray-400">Completed Rides</p>
+                            <p class="text-3xl font-bold text-green-400">${completedCount}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-red-900/30 to-red-800/30 p-4 rounded-lg border border-red-700/50">
+                            <p class="text-sm text-gray-400">Cancelled Rides</p>
+                            <p class="text-3xl font-bold text-red-400">${cancelledCount}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-900/30 to-purple-800/30 p-4 rounded-lg border border-purple-700/50">
+                            <p class="text-sm text-gray-400">Total Rides</p>
+                            <p class="text-3xl font-bold text-purple-400">${totalRides}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Completion Rate</p>
+                        <p class="text-2xl font-bold text-blue-400">${completionRate}%</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-400">Total Earnings</p>
+                        <p class="text-2xl font-bold text-green-400">₹${totalEarnings.toFixed(0)}</p>
+                    </div>
+                </div>
+            `;
+
+            riderDetailsModal.classList.remove('hidden');
+        }
+
+        function displayRiders() {
+            ridersList.innerHTML = '';
+            const allRidersArray = Object.entries(allRiders);
+            
+            // Filter riders based on search term
+            const filteredRiders = allRidersArray.filter(([id, rider]) => {
+                if (!ridersSearchTerm) return true;
+                const name = (rider.name || '').toLowerCase();
+                const phone = (rider.phone || '').toLowerCase();
+                return name.includes(ridersSearchTerm) || phone.includes(ridersSearchTerm);
+            });
+
+            ridersCount.textContent = filteredRiders.length;
+
+            if (filteredRiders.length === 0) {
+                ridersList.innerHTML = '<p class="text-center text-gray-500 py-8">No riders found</p>';
+                return;
+            }
+
+            filteredRiders.forEach(([id, rider]) => {
+                const div = document.createElement('div');
+                const statusDot = rider.isAvailable 
+                    ? '<span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span>'
+                    : '<span class="w-2 h-2 bg-gray-500 rounded-full inline-block"></span>';
+                
+                div.className = 'flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition cursor-pointer';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 rider-info" data-id="${id}">
+                        ${statusDot}
+                        <div>
+                            <p class="font-semibold">${rider.name || 'Unknown'}</p>
+                            <p class="text-sm text-gray-400">${rider.phone || 'N/A'} • ${rider.vehicle || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <button class="delete-btn text-red-400 hover:text-red-300 ml-2" data-type="riders" data-id="${id}" data-name="${rider.name || 'Unknown'}">
+                        🗑️
+                    </button>
+                `;
+                ridersList.appendChild(div);
+            });
+        }
+
+        function displayCustomers() {
+            customersList.innerHTML = '';
+            const allCustomersArray = Object.entries(allRestaurants);
+            
+            // Filter customers based on search term
+            const filteredCustomers = allCustomersArray.filter(([id, restaurant]) => {
+                if (!customersSearchTerm) return true;
+                const name = ((restaurant.profile?.name || restaurant.name) || '').toLowerCase();
+                const phone = ((restaurant.profile?.phone || restaurant.phone) || '').toLowerCase();
+                return name.includes(customersSearchTerm) || phone.includes(customersSearchTerm);
+            });
+
+            customersCount.textContent = filteredCustomers.length;
+
+            if (filteredCustomers.length === 0) {
+                customersList.innerHTML = '<p class="text-center text-gray-500 py-8">No customers found</p>';
+                return;
+            }
+
+            filteredCustomers.forEach(([id, restaurant]) => {
+                const div = document.createElement('div');
+                const name = restaurant.profile?.name || restaurant.name || 'Unknown';
+                const phone = restaurant.profile?.phone || restaurant.phone || 'N/A';
+                const address = restaurant.profile?.address || 'N/A';
+                
+                div.className = 'flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${name}</p>
+                        <p class="text-sm text-gray-400">${phone}</p>
+                        <p class="text-xs text-gray-500">${address}</p>
+                    </div>
+                    <button class="delete-btn text-red-400 hover:text-red-300" data-type="restaurants" data-id="${id}" data-name="${name}">
+                        🗑️
+                    </button>
+                `;
+                customersList.appendChild(div);
+            });
+        }
+
+        ridersList.addEventListener('click', (e) => {
+            // Check if clicked on rider info (not delete button)
+            const riderInfo = e.target.closest('.rider-info');
+            if (riderInfo) {
+                const riderId = riderInfo.getAttribute('data-id');
+                showRiderDetails(riderId);
+                return;
+            }
+
+            // Handle delete button click
+            if (e.target.classList.contains('delete-btn')) {
+                const type = e.target.getAttribute('data-type');
+                const id = e.target.getAttribute('data-id');
+                const name = e.target.getAttribute('data-name');
+                showDeleteConfirmation(type, id, name);
+            }
+        });
+
+        customersList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const type = e.target.getAttribute('data-type');
+                const id = e.target.getAttribute('data-id');
+                const name = e.target.getAttribute('data-name');
+                showDeleteConfirmation(type, id, name);
+            }
+        });
+
+        document.getElementById('refresh-riders').addEventListener('click', displayRiders);
+        document.getElementById('refresh-customers').addEventListener('click', displayCustomers);
+
+        // Billing Logic
+        const userTypeSelect = document.getElementById('user-type');
+        const userSelect = document.getElementById('user-select');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const billingResults = document.getElementById('billing-results');
+        const totalDueEl = document.getElementById('total-due');
+        const unpaidOrdersList = document.getElementById('unpaid-orders-list');
+        const payBtn = document.getElementById('pay-btn');
+        const resultsTitle = document.getElementById('results-title');
+        const resultsDescription = document.getElementById('results-description');
+
+        let calculatedOrders = [];
+
+        async function populateUsers(type) {
+            const data = type === 'riders' ? allRiders : allRestaurants;
+            userSelect.innerHTML = '<option value="">-- Select User --</option>';
+            
+            Object.entries(data).forEach(([id, user]) => {
+                const name = type === 'riders' 
+                    ? user.name 
+                    : (user.profile?.name || user.name || 'Unknown');
+                if (name) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    userSelect.appendChild(option);
+                }
+            });
+        }
+
+        userTypeSelect.addEventListener('change', (e) => {
+            populateUsers(e.target.value);
+            billingResults.classList.add('hidden');
+        });
+
+        calculateBtn.addEventListener('click', async () => {
+            const type = userTypeSelect.value;
+            const userId = userSelect.value;
+            const startDate = new Date(startDateInput.value).getTime();
+            const endDate = new Date(endDateInput.value).setHours(23, 59, 59, 999);
+
+            if (!userId || !startDateInput.value || !endDateInput.value) {
+                alert('Please select a user and a valid date range.');
+                return;
+            }
+
+            const keyField = type === 'riders' ? 'riderId' : 'restaurantId';
+            let total = 0;
+            calculatedOrders = [];
+            unpaidOrdersList.innerHTML = '';
+
+            Object.entries(allOrders).forEach(([orderId, order]) => {
+                const isPaid = type === 'riders' ? order.isPaidToRider : order.isSettledByRestaurant;
+                
+                if (order[keyField] === userId && 
+                    order.status === 'completed' && 
+                    !isPaid && 
+                    order.createdAt >= startDate && 
+                    order.createdAt <= endDate) {
+                    
+                    const amount = type === 'riders' 
+                        ? (Number(order.price) * 15 / 25) 
+                        : Number(order.price);
+                    total += amount;
+                    calculatedOrders.push(orderId);
+                    
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'flex justify-between items-center p-3 bg-gray-700 rounded mb-2';
+                    orderItem.innerHTML = `
+                        <span class="text-sm">${formatDate(order.createdAt)}</span>
+                        <span class="font-semibold text-green-400">₹${amount.toFixed(2)}</span>
+                    `;
+                    unpaidOrdersList.appendChild(orderItem);
+                }
+            });
+
+            if (type === 'riders') {
+                resultsTitle.textContent = `Payment due to ${userSelect.options[userSelect.selectedIndex].text}`;
+                resultsDescription.textContent = 'Total unpaid earnings for selected period:';
+                totalDueEl.className = 'text-5xl font-bold text-green-400 mb-4';
+                payBtn.textContent = 'Mark as Paid';
+            } else {
+                resultsTitle.textContent = `Bill for ${userSelect.options[userSelect.selectedIndex].text}`;
+                resultsDescription.textContent = 'Total outstanding commission for selected period:';
+                totalDueEl.className = 'text-5xl font-bold text-red-400 mb-4';
+                payBtn.textContent = 'Mark as Settled';
+            }
+
+            totalDueEl.textContent = `₹${total.toFixed(2)}`;
+            billingResults.classList.remove('hidden');
+            payBtn.disabled = calculatedOrders.length === 0;
+        });
+
+        payBtn.addEventListener('click', async () => {
+            if (!confirm(`Are you sure you want to mark ${calculatedOrders.length} orders as processed? This cannot be undone.`)) return;
+
+            const type = userTypeSelect.value;
+            const updateField = type === 'riders' ? 'isPaidToRider' : 'isSettledByRestaurant';
+            const updates = {};
+
+            calculatedOrders.forEach(orderId => {
+                updates[`/orders/${orderId}/${updateField}`] = true;
+            });
+
+            try {
+                await update(ref(db), updates);
+                alert('Success! The records have been updated.');
+                billingResults.classList.add('hidden');
+            } catch (e) {
+                alert('An error occurred. Please try again.');
+                console.error(e);
+            }
+        });
+
+        // Firebase Listeners
+        onValue(ref(db, 'orders'), (snapshot) => {
+            allOrders = snapshot.exists() ? snapshot.val() : {};
+            updateDashboardStats();
+            updateAnalytics();
+            displayTodayOrders();
+        });
+
+        onValue(ref(db, 'riders'), (snapshot) => {
+            allRiders = snapshot.exists() ? snapshot.val() : {};
+            updateDashboardStats();
+            displayRiders();
+        });
+
+        onValue(ref(db, 'restaurants'), (snapshot) => {
+            allRestaurants = snapshot.exists() ? snapshot.val() : {};
+            updateDashboardStats();
+            displayCustomers();
+        });
+
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Initialize
+        populateUsers('riders');
+        
+        // Set default dates
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        startDateInput.valueAsDate = firstDay;
+        endDateInput.valueAsDate = today;
+    </script>
+</body>
+</html>
