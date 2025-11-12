@@ -1143,7 +1143,7 @@
                     order.createdAt <= endDate) {
                     
                     const amount = type === 'riders' 
-                        ? (Number(order.price) * 15 / 25) 
+                        ? (Number(order.price)) 
                         : Number(order.price);
                     total += amount;
                     calculatedOrders.push(orderId);
