@@ -60,7 +60,7 @@
 </head>
 <body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-200 min-h-screen">
 
-    <audio id="alarm-sound" src="alarm.wav" preload="auto"></audio>
+    <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <!-- Header -->
@@ -316,41 +316,84 @@
         <div id="billing-content" class="hidden">
             <div class="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
                 <h2 class="text-2xl font-bold text-white mb-6">💰 Process Payments & Bills</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div class="col-span-1">
-                        <label for="user-type" class="block text-sm font-medium text-gray-400 mb-2">User Type</label>
-                        <select id="user-type" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
-                            <option value="riders">Rider Payment</option>
-                            <option value="restaurants">Customer Bill</option>
-                        </select>
+                
+                <!-- User Type Selection -->
+                <div class="mb-6">
+                    <label for="user-type" class="block text-sm font-medium text-gray-400 mb-2">User Type</label>
+                    <select id="user-type" class="w-full md:w-64 bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        <option value="riders">Rider Payments</option>
+                        <option value="restaurants">Customer Bills</option>
+                    </select>
+                </div>
+
+                <!-- Search and Select All -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="billing-search" class="block text-sm font-medium text-gray-400 mb-2">Search Users</label>
+                        <input 
+                            type="text" 
+                            id="billing-search" 
+                            placeholder="Search by name or phone..." 
+                            class="w-full bg-gray-700 border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                        />
                     </div>
-                    <div class="col-span-1">
-                        <label for="user-select" class="block text-sm font-medium text-gray-400 mb-2">Select User</label>
-                        <select id="user-select" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
-                            <option>-- Select User Type First --</option>
-                        </select>
+                    <div class="flex items-end">
+                        <button id="select-all-users" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg">
+                            Select All Users
+                        </button>
                     </div>
-                    <div class="col-span-1">
+                </div>
+
+                <!-- Date Range -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
                         <label for="start-date" class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
                         <input type="date" id="start-date" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
                     </div>
-                    <div class="col-span-1">
+                    <div>
                         <label for="end-date" class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
                         <input type="date" id="end-date" class="w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
                     </div>
                 </div>
-                <button id="calculate-btn" class="mt-6 w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
-                    Calculate
+
+                <!-- Users List with Checkboxes -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-sm font-medium text-gray-400">
+                            Select Users (<span id="selected-count">0</span> selected)
+                        </label>
+                        <button id="clear-selection" class="text-sm text-red-400 hover:text-red-300">Clear Selection</button>
+                    </div>
+                    <div id="users-checkbox-list" class="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto space-y-2">
+                        <p class="text-center text-gray-500">Select user type to load users</p>
+                    </div>
+                </div>
+
+                <button id="calculate-btn" class="w-full md:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                    Calculate Selected Users
                 </button>
 
+                <!-- Results -->
                 <div id="billing-results" class="mt-8 hidden">
                     <div class="bg-gray-700 p-6 rounded-lg">
                         <h3 id="results-title" class="text-2xl font-bold mb-2">Calculation Results</h3>
                         <p id="results-description" class="text-gray-400 mb-4">Total outstanding for selected period:</p>
                         <p id="total-due" class="text-5xl font-bold text-green-400 mb-4">₹0.00</p>
-                        <div id="unpaid-orders-list" class="max-h-60 overflow-y-auto border border-gray-600 rounded-lg p-4 mb-4 bg-gray-800"></div>
+                        
+                        <!-- Individual User Breakdown -->
+                        <div class="mb-4">
+                            <h4 class="text-lg font-semibold text-white mb-3">User Breakdown</h4>
+                            <div id="user-breakdown-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                        </div>
+
+                        <!-- Detailed Order List -->
+                        <div class="mb-4">
+                            <h4 class="text-lg font-semibold text-white mb-3">Order Details</h4>
+                            <div id="unpaid-orders-list" class="max-h-60 overflow-y-auto border border-gray-600 rounded-lg p-4 bg-gray-800"></div>
+                        </div>
+                        
                         <button id="pay-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
-                            Mark as Paid / Settled
+                            Mark All as Paid / Settled
                         </button>
                     </div>
                 </div>
@@ -1080,97 +1123,238 @@
         document.getElementById('refresh-riders').addEventListener('click', displayRiders);
         document.getElementById('refresh-customers').addEventListener('click', displayCustomers);
 
-        // Billing Logic
+        // Billing Logic - Enhanced Multi-Select
         const userTypeSelect = document.getElementById('user-type');
-        const userSelect = document.getElementById('user-select');
+        const billingSearch = document.getElementById('billing-search');
+        const usersCheckboxList = document.getElementById('users-checkbox-list');
+        const selectAllBtn = document.getElementById('select-all-users');
+        const clearSelectionBtn = document.getElementById('clear-selection');
+        const selectedCountEl = document.getElementById('selected-count');
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
         const calculateBtn = document.getElementById('calculate-btn');
         const billingResults = document.getElementById('billing-results');
         const totalDueEl = document.getElementById('total-due');
         const unpaidOrdersList = document.getElementById('unpaid-orders-list');
+        const userBreakdownList = document.getElementById('user-breakdown-list');
         const payBtn = document.getElementById('pay-btn');
         const resultsTitle = document.getElementById('results-title');
         const resultsDescription = document.getElementById('results-description');
 
         let calculatedOrders = [];
+        let selectedUsers = new Set();
+        let billingSearchTerm = '';
+        let allBillingUsers = {};
 
-        async function populateUsers(type) {
+        function updateSelectedCount() {
+            selectedCountEl.textContent = selectedUsers.size;
+        }
+
+        function displayUsersForBilling(type) {
+            usersCheckboxList.innerHTML = '';
             const data = type === 'riders' ? allRiders : allRestaurants;
-            userSelect.innerHTML = '<option value="">-- Select User --</option>';
-            
-            Object.entries(data).forEach(([id, user]) => {
+            allBillingUsers = data;
+
+            // Filter users based on search term
+            const filteredUsers = Object.entries(data).filter(([id, user]) => {
+                if (!billingSearchTerm) return true;
+                const name = type === 'riders' 
+                    ? (user.name || '').toLowerCase()
+                    : ((user.profile?.name || user.name) || '').toLowerCase();
+                const phone = type === 'riders'
+                    ? (user.phone || '').toLowerCase()
+                    : ((user.profile?.phone || user.phone) || '').toLowerCase();
+                return name.includes(billingSearchTerm) || phone.includes(billingSearchTerm);
+            });
+
+            if (filteredUsers.length === 0) {
+                usersCheckboxList.innerHTML = '<p class="text-center text-gray-500">No users found</p>';
+                return;
+            }
+
+            filteredUsers.forEach(([id, user]) => {
                 const name = type === 'riders' 
                     ? user.name 
                     : (user.profile?.name || user.name || 'Unknown');
-                if (name) {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = name;
-                    userSelect.appendChild(option);
-                }
+                const phone = type === 'riders'
+                    ? user.phone
+                    : (user.profile?.phone || user.phone || 'N/A');
+
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-3 p-3 bg-gray-800 rounded-lg hover:bg-gray-600 cursor-pointer transition';
+                div.innerHTML = `
+                    <input 
+                        type="checkbox" 
+                        id="user-${id}" 
+                        value="${id}"
+                        class="user-checkbox w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer"
+                        ${selectedUsers.has(id) ? 'checked' : ''}
+                    />
+                    <label for="user-${id}" class="flex-1 cursor-pointer">
+                        <p class="font-semibold text-white">${name}</p>
+                        <p class="text-sm text-gray-400">${phone}</p>
+                    </label>
+                `;
+                usersCheckboxList.appendChild(div);
+            });
+
+            // Add click handlers for checkboxes
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const userId = e.target.value;
+                    if (e.target.checked) {
+                        selectedUsers.add(userId);
+                    } else {
+                        selectedUsers.delete(userId);
+                    }
+                    updateSelectedCount();
+                });
+            });
+
+            // Make entire row clickable
+            usersCheckboxList.querySelectorAll('.flex').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = row.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
             });
         }
 
+        billingSearch.addEventListener('input', (e) => {
+            billingSearchTerm = e.target.value.toLowerCase();
+            displayUsersForBilling(userTypeSelect.value);
+        });
+
+        selectAllBtn.addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                selectedUsers.add(checkbox.value);
+            });
+            updateSelectedCount();
+        });
+
+        clearSelectionBtn.addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectedUsers.clear();
+            updateSelectedCount();
+        });
+
         userTypeSelect.addEventListener('change', (e) => {
-            populateUsers(e.target.value);
+            selectedUsers.clear();
+            billingSearchTerm = '';
+            billingSearch.value = '';
+            updateSelectedCount();
+            displayUsersForBilling(e.target.value);
             billingResults.classList.add('hidden');
         });
 
         calculateBtn.addEventListener('click', async () => {
             const type = userTypeSelect.value;
-            const userId = userSelect.value;
             const startDate = new Date(startDateInput.value).getTime();
             const endDate = new Date(endDateInput.value).setHours(23, 59, 59, 999);
 
-            if (!userId || !startDateInput.value || !endDateInput.value) {
-                alert('Please select a user and a valid date range.');
+            if (selectedUsers.size === 0) {
+                alert('Please select at least one user.');
+                return;
+            }
+
+            if (!startDateInput.value || !endDateInput.value) {
+                alert('Please select a valid date range.');
                 return;
             }
 
             const keyField = type === 'riders' ? 'riderId' : 'restaurantId';
-            let total = 0;
+            let grandTotal = 0;
             calculatedOrders = [];
-            unpaidOrdersList.innerHTML = '';
+            const userTotals = new Map();
 
-            Object.entries(allOrders).forEach(([orderId, order]) => {
-                const isPaid = type === 'riders' ? order.isPaidToRider : order.isSettledByRestaurant;
-                
-                if (order[keyField] === userId && 
-                    order.status === 'completed' && 
-                    !isPaid && 
-                    order.createdAt >= startDate && 
-                    order.createdAt <= endDate) {
-                    
-                    const amount = type === 'riders' 
-                        ? (Number(order.price)) 
-                        : Number(order.price);
-                    total += amount;
-                    calculatedOrders.push(orderId);
-                    
-                    const orderItem = document.createElement('div');
-                    orderItem.className = 'flex justify-between items-center p-3 bg-gray-700 rounded mb-2';
-                    orderItem.innerHTML = `
-                        <span class="text-sm">${formatDate(order.createdAt)}</span>
-                        <span class="font-semibold text-green-400">₹${amount.toFixed(2)}</span>
-                    `;
-                    unpaidOrdersList.appendChild(orderItem);
+            // Calculate for each selected user
+            selectedUsers.forEach(userId => {
+                let userTotal = 0;
+                const userOrders = [];
+
+                Object.entries(allOrders).forEach(([orderId, order]) => {
+                    const isPaid = type === 'riders' ? order.isPaidToRider : order.isSettledByRestaurant;
+
+                    if (order[keyField] === userId &&
+                        order.status === 'completed' &&
+                        !isPaid &&
+                        order.createdAt >= startDate &&
+                        order.createdAt <= endDate) {
+
+                        const amount = type === 'riders'
+                            ? (Number(order.price) * 15 / 25)
+                            : Number(order.price);
+                        
+                        userTotal += amount;
+                        grandTotal += amount;
+                        calculatedOrders.push(orderId);
+                        userOrders.push({ orderId, order, amount });
+                    }
+                });
+
+                if (userTotal > 0) {
+                    const user = allBillingUsers[userId];
+                    const userName = type === 'riders'
+                        ? user.name
+                        : (user.profile?.name || user.name || 'Unknown');
+                    userTotals.set(userId, { name: userName, total: userTotal, orders: userOrders });
                 }
             });
 
+            // Display user breakdown
+            userBreakdownList.innerHTML = '';
+            userTotals.forEach((data, userId) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-3 bg-gray-800 rounded-lg';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-white">${data.name}</p>
+                        <p class="text-sm text-gray-400">${data.orders.length} orders</p>
+                    </div>
+                    <span class="text-lg font-bold text-green-400">₹${data.total.toFixed(2)}</span>
+                `;
+                userBreakdownList.appendChild(div);
+            });
+
+            // Display detailed orders
+            unpaidOrdersList.innerHTML = '';
+            userTotals.forEach((data, userId) => {
+                data.orders.forEach(({ orderId, order, amount }) => {
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'flex justify-between items-center p-3 bg-gray-700 rounded mb-2';
+                    orderItem.innerHTML = `
+                        <div>
+                            <span class="text-sm font-semibold text-white">${data.name}</span>
+                            <span class="text-sm text-gray-400 ml-2">${formatDate(order.createdAt)}</span>
+                        </div>
+                        <span class="font-semibold text-green-400">₹${amount.toFixed(2)}</span>
+                    `;
+                    unpaidOrdersList.appendChild(orderItem);
+                });
+            });
+
+            // Update UI
             if (type === 'riders') {
-                resultsTitle.textContent = `Payment due to ${userSelect.options[userSelect.selectedIndex].text}`;
+                resultsTitle.textContent = `Payment due to ${selectedUsers.size} rider(s)`;
                 resultsDescription.textContent = 'Total unpaid earnings for selected period:';
                 totalDueEl.className = 'text-5xl font-bold text-green-400 mb-4';
-                payBtn.textContent = 'Mark as Paid';
+                payBtn.textContent = 'Mark All as Paid';
             } else {
-                resultsTitle.textContent = `Bill for ${userSelect.options[userSelect.selectedIndex].text}`;
+                resultsTitle.textContent = `Bill for ${selectedUsers.size} customer(s)`;
                 resultsDescription.textContent = 'Total outstanding commission for selected period:';
                 totalDueEl.className = 'text-5xl font-bold text-red-400 mb-4';
-                payBtn.textContent = 'Mark as Settled';
+                payBtn.textContent = 'Mark All as Settled';
             }
 
-            totalDueEl.textContent = `₹${total.toFixed(2)}`;
+            totalDueEl.textContent = `₹${grandTotal.toFixed(2)}`;
             billingResults.classList.remove('hidden');
             payBtn.disabled = calculatedOrders.length === 0;
         });
@@ -1190,6 +1374,9 @@
                 await update(ref(db), updates);
                 alert('Success! The records have been updated.');
                 billingResults.classList.add('hidden');
+                selectedUsers.clear();
+                updateSelectedCount();
+                displayUsersForBilling(userTypeSelect.value);
             } catch (e) {
                 alert('An error occurred. Please try again.');
                 console.error(e);
